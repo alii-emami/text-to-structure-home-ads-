@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>استخراج اطلاعات آگهی خانه | FastAPI</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #f5f7fc 0%, #e9eef5 100%);
+            font-family: 'Segoe UI', 'Tahoma', system-ui, 'Vazirmatn', 'Vazir', sans-serif;
+            padding: 2rem 1rem;
+            color: #1e2a3e;
+        }
+
+        .container {
+            max-width: 1300px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(2px);
+            border-radius: 2rem;
+            box-shadow: 0 20px 35px -12px rgba(0, 0, 0, 0.15);
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+
+        .card-header {
+            background: linear-gradient(105deg, #0f2c4e 0%, #1e4a76 100%);
+            padding: 1.5rem 2rem;
+            color: white;
+        }
+
+        .card-header h1 {
+            font-size: 1.8rem;
+            font-weight: 600;
+            margin-bottom: 0.3rem;
+        }
+
+        .card-header p {
+            opacity: 0.85;
+            font-size: 0.95rem;
+        }
+
+        .card-body {
+            padding: 2rem;
+        }
+
+        .input-group {
+            margin-bottom: 1.8rem;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 0.6rem;
+            font-size: 1rem;
+            color: #0f2c4e;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 1rem 1.2rem;
+            font-size: 0.95rem;
+            font-family: inherit;
+            background: #fefefe;
+            border: 2px solid #e2e8f0;
+            border-radius: 1.2rem;
+            resize: vertical;
+            transition: all 0.2s;
+            line-height: 1.5;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+        }
+
+        .btn-submit {
+            background: #1e4a76;
+            color: white;
+            border: none;
+            padding: 0.85rem 2rem;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: 2rem;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.2s;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-submit:hover {
+            background: #0f3b5e;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 18px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-submit:active {
+            transform: translateY(1px);
+        }
+
+        .output-section {
+            margin-top: 2rem;
+            border-top: 2px dashed #cbd5e1;
+            padding-top: 1.5rem;
+        }
+
+        .output-title {
+            font-weight: 700;
+            margin-bottom: 0.8rem;
+            color: #0f2c4e;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .json-box {
+            background: #0f172a;
+            color: #e2e8f0;
+            padding: 1.2rem;
+            border-radius: 1.2rem;
+            overflow-x: auto;
+            font-family: 'JetBrains Mono', 'Fira Code', monospace;
+            font-size: 0.85rem;
+            line-height: 1.45;
+            white-space: pre-wrap;
+            word-break: break-word;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .status-badge {
+            font-size: 0.8rem;
+            background: #e2e8f0;
+            border-radius: 2rem;
+            padding: 0.2rem 0.8rem;
+            display: inline-block;
+            margin-right: 1rem;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 2rem;
+            font-size: 0.75rem;
+            color: #5b6e8c;
+        }
+
+        @media (max-width: 640px) {
+            .card-body {
+                padding: 1.2rem;
+            }
+            .card-header h1 {
+                font-size: 1.4rem;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="card">
+        <div class="card-header">
+            <h1>🏠 استخراج ساختاریافته آگهی ملک</h1>
+            <p>متن آگهی خانه را وارد کنید — خروجی JSON با فیلدهای هدفمند (FastAPI backend)</p>
+        </div>
+        <div class="card-body">
+            <div class="input-group">
+                <label>📝 متن آگهی:</label>
+                <textarea id="adText" rows="5" placeholder="مثال: آپارتمان ۸۵ متری، دو خوابه، سال ساخت ۱۴۰۰، در خیابان ولیعصر، دارای انباری و پارکینگ، قیمت ۳ میلیارد تومان ..."></textarea>
+            </div>
+            <div>
+                <button id="submitBtn" class="btn-submit">
+                    <span>✨</span> تحلیل و استخراج JSON
+                </button>
+                <span id="statusMsg" class="status-badge">در انتظار درخواست</span>
+            </div>
+
+            <div class="output-section">
+                <div class="output-title">
+                    📦 خروجی JSON ساختاریافته :
+                    <span id="loadingSpinner" style="display: none;">⏳ در حال پردازش...</span>
+                </div>
+                <div id="jsonOutput" class="json-box">
+                    { "message": "پس از ارسال متن، نتیجه در اینجا نمایش داده می‌شود." }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        ⚡ نکته: مطمئن شوید FastAPI روی آدرس http://localhost:8000 اجرا می‌شود و endpoint <code>/parse-ad</code> (POST) فعال باشد.
+    </footer>
+</div>
+
+<script>
+    // آدرس API (نسبی، هم‌دامنه با سرور FastAPI که روی پورت 8000 اجرا می‌شود)
+    const API_URL = "/parse-ad";
+
+    // تابع ارسال متن به بک‌اند
+    async function sendTextToBackend(text) {
+        const response = await fetch(API_URL, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ text: text })
+        });
+
+        if (!response.ok) {
+            let errorMsg = `خطای HTTP ${response.status}`;
+            try {
+                const errData = await response.json();
+                errorMsg = errData.detail || errorMsg;
+            } catch(e) {}
+            throw new Error(errorMsg);
+        }
+
+        return await response.json();
+    }
+
+    // نمایش خروجی JSON به صورت فرمت شده
+    function displayJsonOutput(data) {
+        const outputDiv = document.getElementById("jsonOutput");
+        outputDiv.textContent = JSON.stringify(data, null, 2);
+    }
+
+    // مدیریت کلیک روی دکمه
+    document.getElementById("submitBtn").addEventListener("click", async (event) => {
+        event.preventDefault();  // جلوگیری از هرگونه رفتار پیش‌فرض
+
+        const textarea = document.getElementById("adText");
+        const adText = textarea.value.trim();
+        const statusSpan = document.getElementById("statusMsg");
+        const loadingSpan = document.getElementById("loadingSpinner");
+        const submitBtn = document.getElementById("submitBtn");
+
+        if (!adText) {
+            statusSpan.innerHTML = "⚠️ لطفاً متن آگهی را وارد کنید";
+            statusSpan.style.background = "#fef3c7";
+            setTimeout(() => {
+                statusSpan.innerHTML = "در انتظار درخواست";
+                statusSpan.style.background = "#e2e8f0";
+            }, 2000);
+            return;
+        }
+
+        // تغییر وضعیت به در حال ارسال
+        statusSpan.innerHTML = "🔄 در حال ارسال...";
+        statusSpan.style.background = "#bfdbfe";
+        loadingSpan.style.display = "inline-flex";
+        submitBtn.disabled = true;
+        submitBtn.style.opacity = "0.6";
+
+        try {
+            const result = await sendTextToBackend(adText);
+            displayJsonOutput(result);
+            statusSpan.innerHTML = "✅ موفق - JSON دریافت شد";
+            statusSpan.style.background = "#bbf7d0";
+        } catch (error) {
+            console.error(error);
+            displayJsonOutput({ error: "خطا در ارتباط با سرور", detail: error.message });
+            statusSpan.innerHTML = "❌ خطا در ارتباط";
+            statusSpan.style.background = "#fecaca";
+        } finally {
+            loadingSpan.style.display = "none";
+            submitBtn.disabled = false;
+            submitBtn.style.opacity = "1";
+            // بازگشت وضعیت به حالت اولیه پس از ۳ ثانیه
+            setTimeout(() => {
+                if (statusSpan.innerHTML.includes("موفق") || statusSpan.innerHTML.includes("خطا")) {
+                    statusSpan.innerHTML = "در انتظار درخواست";
+                    statusSpan.style.background = "#e2e8f0";
+                }
+            }, 3000);
+        }
+    });
+</script>
+</body>
+</html>
